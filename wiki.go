@@ -31,11 +31,7 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	title, err := getTitle(w, r)
-	if err != nil {
-		return
-	}
+func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	log.Printf("Request received to view title - %s", title)
 	page, err := loadPage(title)
 	if err != nil {
@@ -45,11 +41,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "view", page)
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
-	title, err := getTitle(w, r)
-	if err != nil {
-		return
-	}
+func editHandler(w http.ResponseWriter, r *http.Request, title string) {
 	log.Printf("Request received to edit title - %s", title)
 	page, err := loadPage(title)
 	if err != nil {
@@ -58,15 +50,11 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "edit", page)
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request) {
-	title, err := getTitle(w, r)
-	if err != nil {
-		return
-	}
+func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	log.Printf("Request received to save title - %s", title)
 	body := r.FormValue("body")
 	page := &Page{Title: title, Body: []byte(body)}
-	err = page.save()
+	err := page.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -85,7 +73,7 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 	m := validPath.FindStringSubmatch(r.URL.Path)
 	if m == nil {
 		http.NotFound(w, r)
-		log.Printf("Request received fro a invalid path - %s", r.URL.Path)
+		log.Printf("Request received for a invalid path - %s", r.URL.Path)
 		return "", errors.New("Invalid page title")
 	}
 	return m[2], nil
@@ -95,10 +83,20 @@ func getFilename(title string) string {
 	return title + ".txt"
 }
 
+func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		title, err := getTitle(w, r)
+		if err != nil {
+			return
+		}
+		fn(w, r, title)
+	}
+}
+
 func main() {
-	http.HandleFunc("/view/", viewHandler)
-	http.HandleFunc("/edit/", editHandler)
-	http.HandleFunc("/save/", saveHandler)
+	http.HandleFunc("/view/", makeHandler(viewHandler))
+	http.HandleFunc("/edit/", makeHandler(editHandler))
+	http.HandleFunc("/save/", makeHandler(saveHandler))
 	log.Printf("Starting the web server in port %s", "8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
