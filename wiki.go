@@ -80,7 +80,7 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 }
 
 func getFilename(title string) string {
-	return title + ".txt"
+	return "data/" + title + ".txt"
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
