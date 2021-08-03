@@ -31,6 +31,11 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Request received to view the web root")
+	viewHandler(w, r, "FrontPage")
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	log.Printf("Request received to view title - %s", title)
 	page, err := loadPage(title)
@@ -97,6 +102,7 @@ func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/", rootHandler)
 	log.Printf("Starting the web server in port %s", "8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
