@@ -2,12 +2,16 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 )
+
+const DEFAULT_PORT = "8000"
 
 var templates = template.Must(template.ParseFiles("templates/view.html", "templates/edit.html"))
 var validPath = regexp.MustCompile("^/(view|edit|save)/([a-zA-Z0-9]+)$")
@@ -103,6 +107,10 @@ func main() {
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/", rootHandler)
-	log.Printf("Starting the web server in port %s", "8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	servingPort, ok := os.LookupEnv("SERVING_PORT")
+	if !ok {
+		servingPort = DEFAULT_PORT
+	}
+	log.Printf("Starting the web server in port %s", servingPort)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", servingPort), nil))
 }
